@@ -11,7 +11,9 @@ import java.util.*;
 public class ClienteGUI implements Runnable{
 
     private JFrame frame;
-    private JTextField respuestaTextField;
+    private JTextField idCliente;
+    private JTextField tipoVehiculo;
+    private JTextField galones;
     private JLabel jlabel;
     private JButton JbuttonRegistro;
     private Socket socket;
@@ -27,12 +29,18 @@ public class ClienteGUI implements Runnable{
         frame.setLayout(new FlowLayout());
 
 
+        //PENDIENTE : CAMBIO DE POSICION (?)
+        idCliente = new JTextfield();
+        frame.add(idCliente);
 
-        frame.add(respuestaTextArea);
+        tipoVehiculo = new JTextField();
+        frame.add(tipoVehiculo);
 
+        galones = new JTextField();
+        frame.add(galones);
 
         JbuttonRegistro = new JButton("Registro");
-        frame.add(JbuttonRegistro);
+        frame.add(JbuttonRegistro);  //CAMBIO DE POSICION REQUERIDO(?)
 
         frame.setVisible(true);
     }
