@@ -1,2 +1,4 @@
 ID Cliente: 7be0015a-b210-4992-b0f2-b18884b0cc88, Tipo Vehículo: camioneta, Galones: 14.0, Fecha y Hora: 2024-11-12 23:21:29
 {"cliente_id": "1234", "tipo_vehiculo": "motocicleta", "cantidad_gasolina": 12,00, "fecha_tanqueo": "2024-11-12 23:28:19"}
+{"cliente_id": "1234", "tipo_vehiculo": "motocicleta", "cantidad_gasolina": 12,00, "fecha_tanqueo": "2024-11-12 23:52:26"}
+{"cliente_id": "12345555", "tipo_vehiculo": "motocicleta", "cantidad_gasolina": 18,00, "fecha_tanqueo": "2024-11-12 23:52:45"}
