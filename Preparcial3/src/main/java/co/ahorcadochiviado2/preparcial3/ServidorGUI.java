@@ -6,99 +6,57 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.concurrent.*;
 
-public class ServidorGUI extends Application {
+public class ServidorGUI implements Runnable{
 
-    private TextArea textArea;
+    private JFrame frame;
+    private JLabel jLabel;
+    private ServerSocket serverSocket;
+    private ArrayList<ClienteHandler> clientesConectados;
 
-    // Usamos un pool de hilos para manejar múltiples clientes concurrentes
-    private static final int PUERTO = 8080;
-    private static ExecutorService pool = Executors.newFixedThreadPool(10);
+    public ServidorGUI() {
+        frame = new JFrame("Servidor-Registro de tanqueo");
+        frame.setSize(800,600);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setLayout(new FlowLayout());
 
-    public static void main(String[] args) {
-        launch(args);
+        jLabel = new JLabel("Registro: ");
+        frame.add(jLabel);
+
+        frame.setVisible(true);
     }
 
-    @Override
-    public void start(Stage primaryStage) {
-        // Crear la interfaz gráfica
-        textArea = new TextArea();
-        textArea.setEditable(false);
-        textArea.setPrefSize(600, 400);
+    public void conectarCliente() {
+        try {
+            serverSocket = new ServerSocket(12345);
+            JOptionPane.showMessageDialog(frame, "Esperando Cliente...");
 
-        Button startButton = new Button("Iniciar Servidor");
-        startButton.setOnAction(event -> iniciarServidor());
+            while (true) {
+                // Aceptar una nueva conexión de cliente
+                Socket clientSocket = serverSocket.accept();
+                JOptionPane.showMessageDialog(frame, "Cliente Conectado!");
 
-        VBox vbox = new VBox(10, startButton, textArea);
-        Scene scene = new Scene(vbox, 650, 500);
+                // Crear un nuevo manejador de cliente y agregarlo a la lista
+                ClienteHandler clienteHandler = new ClienteHandler(clientSocket);
+                clientesConectados.add(clienteHandler);
 
-        primaryStage.setTitle("Servidor - Estación de Servicio");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
+                // Iniciar un nuevo hilo para el cliente
+                Thread clienteThread = new Thread(clienteHandler);
+                clienteThread.start();
 
-    private void iniciarServidor() {
-        Thread serverThread = new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(PUERTO)) {
-                appendText("Servidor escuchando en el puerto " + PUERTO);
-
-                while (true) {
-                    Socket clienteSocket = serverSocket.accept();
-                    appendText("Nuevo cliente conectado: " + clienteSocket.getInetAddress());
-                    pool.submit(new HiloCliente2(clienteSocket, textArea));
-                }
-            } catch (IOException e) {
-                appendText("Error al iniciar el servidor: " + e.getMessage());
             }
-        });
-        serverThread.start();
-    }
 
-    private void appendText(String text) {
-        // Usar el hilo de la interfaz gráfica para actualizar el TextArea
-        javafx.application.Platform.runLater(() -> textArea.appendText(text + "\n"));
-    }
-}
-
-class HiloCliente2 implements Runnable {
-    private Socket clienteSocket;
-    private TextArea textArea;
-
-    public HiloCliente2(Socket socket, TextArea textArea) {
-        this.clienteSocket = socket;
-        this.textArea = textArea;
-    }
-
-    @Override
-    public void run() {
-        try (
-                InputStream input = clienteSocket.getInputStream();
-                OutputStream output = clienteSocket.getOutputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                PrintWriter writer = new PrintWriter(output, true)
-        ) {
-            // Recibir los datos enviados por el cliente
-            String datosTanqueo = reader.readLine();
-            appendText("Datos recibidos: " + datosTanqueo);
-
-            // Procesar y almacenar los datos
-            guardarDatosTanqueo(datosTanqueo);
-
-            // Enviar una respuesta al cliente
-            writer.println("Registro de tanqueo exitoso.");
         } catch (IOException e) {
-            appendText("Error al procesar la conexión: " + e.getMessage());
-        } finally {
-            try {
-                clienteSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
     }
+
 
     private void guardarDatosTanqueo(String datos) {
         try (FileWriter fw = new FileWriter("registros_tanqueo.txt", true);
@@ -106,11 +64,64 @@ class HiloCliente2 implements Runnable {
             bw.write(datos);
             bw.newLine();
         } catch (IOException e) {
-            appendText("Error al guardar los datos: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void appendText(String text) {
-        javafx.application.Platform.runLater(() -> textArea.appendText(text + "\n"));
+    class ClienteHandler implements Runnable{
+
+        private Socket clientSocket;
+        private BufferedReader input;
+        private PrintWriter output;
+
+        public ClienteHandler(Socket clientSocket) {
+            this.clientSocket = clientSocket;
+
+            try{
+                this.input= new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                this.output = new PrintWriter(clientSocket.getOutputStream(),true);
+
+                String datosTanqueo = input.readLine();
+
+
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+
+        }
+
+        public void run() {
+
+
+
+        }
+
+
+        public void cerrarConexion() {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void enviarMensaje(String s) {
+            output.println(s);
+        }
+    }
+
+
+
+    @Override
+    public void run() {
+        conectarCliente();
+    }
+
+    public static void main(String[] args) {
+        ServidorGUI servidor = new ServidorGUI();
+
+        // Iniciar el servidor en un hilo aparte
+        Thread serverThread = new Thread(servidor);
+        serverThread.start();
     }
 }

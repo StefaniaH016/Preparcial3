@@ -98,6 +98,7 @@ class Cliente implements Runnable {
         this.consumo = tipo.equals("Vehículo") ? 10 : 4; // Vehículo consume 10 galones, Motocicleta 4
     }
 
+
     @Override
     public void run() {
         try {

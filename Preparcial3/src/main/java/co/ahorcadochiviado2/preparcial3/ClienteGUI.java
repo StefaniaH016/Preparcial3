@@ -1,81 +1,68 @@
 package co.ahorcadochiviado2.preparcial3;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.*;
 import java.net.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.*;
 
-public class ClienteGUI extends Application {
+public class ClienteGUI implements Runnable{
 
-    private TextArea respuestaTextArea;
+    private JFrame frame;
+    private JTextField respuestaTextField;
+    private JLabel jlabel;
+    private JButton JbuttonRegistro;
+    private Socket socket;
+    private BufferedReader input;
+    private PrintWriter output;
 
-    public static void main(String[] args) {
-        launch(args);
+
+    public ClienteGUI() {
+        frame = new JFrame();
+        frame.setTitle("Cliente");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800,600);
+        frame.setLayout(new FlowLayout());
+
+
+
+        frame.add(respuestaTextArea);
+
+
+        JbuttonRegistro = new JButton("Registro");
+        frame.add(JbuttonRegistro);
+
+        frame.setVisible(true);
     }
 
-    @Override
-    public void start(Stage primaryStage) {
-        // Campos de entrada
-        TextField clienteIdField = new TextField();
-        clienteIdField.setPromptText("Número de identificación del cliente");
+    public void conectarConServidor() {
+        try {
+            socket = new Socket("localhost", 12345);
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            output = new PrintWriter(socket.getOutputStream(), true);
 
-        TextField tipoVehiculoField = new TextField();
-        tipoVehiculoField.setPromptText("Tipo de vehículo");
-
-        TextField cantidadGasolinaField = new TextField();
-        cantidadGasolinaField.setPromptText("Cantidad de gasolina (en galones)");
-
-        Button enviarButton = new Button("Enviar Registro");
-
-        respuestaTextArea = new TextArea();
-        respuestaTextArea.setEditable(false);
-
-        enviarButton.setOnAction(event -> {
-            String clienteId = clienteIdField.getText();
-            String tipoVehiculo = tipoVehiculoField.getText();
-            double cantidadGasolina = Double.parseDouble(cantidadGasolinaField.getText());
-
-            // Obtener la fecha y hora actual
-            String fechaTanqueo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-
-            String datosTanqueo = String.format("{\"cliente_id\": \"%s\", \"tipo_vehiculo\": \"%s\", \"cantidad_gasolina\": %.2f, \"fecha_tanqueo\": \"%s\"}",
-                    clienteId, tipoVehiculo, cantidadGasolina, fechaTanqueo);
-
-            // Enviar los datos al servidor
-            enviarDatosAlServidor(datosTanqueo);
-        });
-
-        VBox vbox = new VBox(10, clienteIdField, tipoVehiculoField, cantidadGasolinaField, enviarButton, respuestaTextArea);
-        Scene scene = new Scene(vbox, 400, 400);
-
-        primaryStage.setTitle("Cliente - Estación de Servicio");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
-    private void enviarDatosAlServidor(String datosTanqueo) {
-        try (Socket socket = new Socket("localhost", 8080);
-             OutputStream output = socket.getOutputStream();
-             InputStream input = socket.getInputStream();
-             PrintWriter writer = new PrintWriter(output, true);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
-
-            // Enviar los datos al servidor
-            writer.println(datosTanqueo);
-            System.out.println("Datos enviados al servidor.");
-
-            // Recibir la respuesta del servidor
-            String respuesta = reader.readLine();
-            respuestaTextArea.appendText("Respuesta del servidor: " + respuesta + "\n");
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    @Override
+    public void run() {
+      conectarConServidor();
+    }
+
+    public static void main(String[] args) {
+        ClienteGUI cliente = new ClienteGUI();
+        ClienteGUI cliente2= new ClienteGUI();
+
+
+        // Iniciar el hilo para ejecutar la conexión y comunicación
+        Thread clienteThread = new Thread(cliente);
+        clienteThread.start();
+
+        Thread clienteThread2 = new Thread(cliente2);
+        clienteThread2.start();
     }
 }
